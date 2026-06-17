@@ -560,3 +560,330 @@ th:href="@{/css/bootstrap.rtl.min.css}"
 **URL 링크 간단히**
 - `th:href="@{|/basic/items/${item.id}|}"`
 - 리터럴 대체 문법을 활용해서 간단히 사용할 수도 있다. 
+
+**참고**
+타임리프는 순수 HTML 파일을 웹 브라우저에서 열어도 내용을 확인할 수 있고, 서버를 통해 뷰 템플릿을 거치면
+동적으로 변경된 결과를 확인할 수 있다. JSP를 생각해보면, JSP 파일은 웹 브라우저에서 그냥 열면 JSP 소스코드와
+HTML이 뒤죽박죽 되어서 정상적인 확인이 불가능하다. 오직 서버를 통해서 JSP를 열어야 한다.
+이렇게 순수 HTML을 그대로 유지하면서 뷰 템플릿도 사용할 수 있는 타임리프의 특징을 네츄럴 템플릿이라 한다. 
+
+**상품 상세**
+상품 상세 컨트롤러와 뷰를 개발하자.
+
+**BasicItemController에 추가**
+
+```java
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+@GetMapping("/{itemId}")
+public String item(@PathVariable("itemId") Long itemId, Model model) {
+  Item item = itemRepository.findById(itemId);
+  model.addAttribute("item", item);
+  return "basic/item";
+}
+```
+
+`PathVariable`로 넘어온 상품ID로 상품을 조회하고, 모델에 담아둔다. 그리고 뷰 템플릿을 호출한다.
+
+**상품 상세 뷰**
+정적 HTML을 뷰 템플릿(templates) 영역으로 복사하고 다음과 같이 수정하자.
+
+`resources/templates/basic/item.html`
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <link href="../css/bootstrap.rtl.min.css"
+          th:href="@{/css/bootstrap.rtl.min.css}" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 560px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>상품 상세</h2>
+        </div>
+        
+        <div>
+            <label for="itemId">상품 ID</label>
+            <input type="text" id="itemId" name="itemId" class="form-control" value="1"
+                   th:value="${item.id}" readonly>
+        </div>
+        
+        <div>
+            <label for="price">가격</label>
+            <input type="text" id="price" name="price" class="form-control" value="10000"
+                   th:value="${item.price}" readonly>
+        </div>
+        
+        <div>
+            <label for="quantity">수량</label>
+            <input type="text" id="quantity" name="quantity" class="form-control"
+                   value="10" th:value="${item.quantity}" readonly> 
+        </div>
+        
+        <hr class="my-4">
+        
+        <div class="row">
+            <div class="col">
+                <button class="w-100 btn btn-primary btn-lg"
+                        onclick="location.href='editForm.html'"
+                        th:onclick="|location.href='@{basic/items/{itemId}/edit(itemId=${item.id})}'|"
+                        type="button">
+                    상품 수정
+                </button>
+            </div>
+            
+            <div class="col">
+                <button class="w-100 btn btn-secondary btn-lg"
+                        onclick="location.href='items.html'"
+                        th:onclick="|location.href='@{/basic/items}'|"
+                        type="button">
+                    목록으로 
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+**속성 변경 - th:value**
+`th:value="${item.id}`
+- 모델에 있는 item 정보를 획득하고 프로퍼티 접근법으로 출력한다. `(item.getId())`
+- `value` 속성을 `th:value` 속성으로 변경한다.
+
+**상품수정 링크**
+`th:onclick="|location.href='@{/basic/items/{itemId}/edit(itemId=${item.id})}'|`
+
+**목록으로 링크**
+- `th:onclick="|location.href='@{/basic/items}'|"`
+
+**상품 등록 폼**
+BasicItemController에 추가
+
+```java
+import org.springframework.web.bind.annotation.GetMapping;
+
+@GetMapping
+public String addForm() {
+  return "basic/addForm"; 
+}
+```
+
+상품 등록 폼은 단순히 뷰 템플릿만 호출한다.
+
+`/resources/templates/basic/addForm.html`
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <link href="../css/bootstrap.rtl.min.css"
+          th:href="@{/css/bootstrap.rtl.min.css}" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 560px; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>상품 등록 폼</h2>
+        </div>
+        
+        <h4 class="mb-3">상품 입력</h4>
+        
+        <form action="item.html" th:action method="post">
+            <div>
+                <label for="itemName">상품명</label>
+                <input type="text" id="itemName" name="itemName" class="form-control"
+                       placeholder="이름을 입력하세요">
+            </div>
+            
+            <div>
+                <label for="price">가격</label>
+                <input type="text" id="price" name="price" class="form-control"
+                       placeholder="가격을 입력하세요">
+            </div>
+            
+            <div>
+                <label for="quantity">수량</label>
+                <input type="text" id="quantity" name="quantity" class="form-control"
+                       placeholder="수량을 입력하세요">
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="row">
+                <div class="col">
+                    <button class="w-100 btn btn-primary btn-lg" type="submit">상품 등록</button>
+                </div>
+                
+                <div class="col">
+                    <button class="w-100 btn btn-secondary btn-lg"
+                            onclick="location.href='items.html'"
+                            th:onclick="|location.href='@{/basic/items}'|"
+                            type="button">취소</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>
+```
+
+**속성 변경 - th:action**
+- `th:action`
+- HTML form에서 `action`에 값이 없으면 현재 URL에 데이터를 전송한다.
+- 상품 등록 폼의 URL과 실제 상품 등록을 처리하는 URL을 똑같이 맞추고 HTTP 메서드로 두 기능을 구분한다.
+-> 상품 등록 폼 : GET `/basic/items/add`
+-> 상품 등록 처리 : POST `/basic/items/add`
+- 이렇게 하면 하나의 URL로 등록 폼과, 등록 처리를 깔끔하게 처리할 수 있다. 
+
+**취소**
+- 취소시 상품 목록으로 이동한다.
+- `th:onclick="|location.href='@{/basic/items}'|"`
+
+## 4. 상품 등록 처리 - @ModelAttribute
+이제 상품 등록 폼에서 전달된 데이터로 실제 상품을 등록 처리해보자.
+상품 등록 폼은 다음 방식으로 서버에 데이터를 전달한다.
+- `POST - HTML Form`
+-> `content-type: application/x-www-form-urlencoded`
+-> 메시지 바디에 쿼리 파라미터 형식으로 전달 `itemName=itemA&price=10000&quantity=10`
+-> ex) 회원 가입, 상품 주문, HTML Form 사용 
+
+요청 파라미터 형식을 처리해야 하므로 `@RequestParam`을 사용하자. 
+
+**상품 등록 처리 - @RequestParam**
+
+**addItemV1 - BasicItemController에 추가**
+
+```java
+import hello.itemservice.domain.item.Item;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@PostMapping("/add")
+public String addItemV1(@RequestParam String itemName,
+                        @RequestParam int price,
+                        @RequestParam Integer quantity,
+                        Model model) {
+
+  Item item = new Item();
+  item.setItemName(itemName);
+  item.setPrice(price);
+  item.setQuantity(quantity);
+  
+  itemRepository.save(item);
+  
+  model.addAttribute("item", item);
+  
+  return "basic/item"; 
+
+}
+```
+
+- 먼저 `@RequestParam String itemName` : itemName 요청 파라미터 데이터를 해당 변수에 받는다.
+- `Item` 객체를 생성하고 `itemRepository`를 통해서 저장한다.
+- 저장된 `item`을 모델에 담아서 뷰에 전달한다. 
+
+**상품 등록 처리 - @ModelAttribute**
+`@RequestParam`으로 변수를 하나하나 받아서 `Item`을 생성하는 과정은 불편했다.
+이번에는 `@ModelAttribute`를 사용해서 한번에 처리해보자.
+
+**addItemV2 - 상품 등록 처리 - ModelAttribute**
+
+```java
+/**
+ * @ModelAttribute("item") Item item
+ * model.addAttribute("item", item); 자동 추가 
+ */
+
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+
+@PostMapping("/add")
+public String addItemV2(@ModelAttribute("item") Item item, Model model) {
+  itemRepository.save(item);
+  //model.addAttribute("item", item); // 자동 추가, 생략 가능
+  return "basic/item";
+}
+```
+
+**@ModelAttribute - 요청 파라미터 처리**
+`@ModelAttribute`는 `Item`객체를 생성하고, 요청 파라미터의 값을 프로퍼티 접근법으로 입력해준다.
+
+**@ModelAttribute - Model 추가**
+`@ModelAttribute`는 중요한 한가지 기능이 더 있는데, 바로 모델에 `@ModelAttribute`로 지정한 객체를 
+자동으로 넣어준다. 지금 코드를 보면 `model.addAttribute("item", item)`가 주석처리 되어 있어도
+동작하는 것을 확인할 수 있다. 
+
+모델에 데이터를 담을 때는 이름이 필요하다. 이름은 `@ModelAttribute`에 지정한 name(value) 속성을 사용한다.
+만약 다음과 같이 `@ModelAttribute`의 이름을 다르게 지정하면 다른 이름으로 모델에 포함된다.
+
+ex) `@ModelAttribute("hello") Item item` -> 이름을 `hello`로 지정.
+`model.addAttribute("hello", item);`-> 모델에 hello 이름으로 저장.
+
+**addItemV3 - 상품 등록 처리 - ModelAttribute 이름 생략**
+
+```java
+/**
+ * @ModelAttribute name 생략 가능
+ * model.addAttribute(item); 자동 추가, 생략 가능
+ * 생략시 model에 저장되는 name은 클래스명 첫글자만 소문자로 등록 Item -> item
+ */
+
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+
+@PostMapping("/add")
+public String addItemV3(@ModelAttribute Item item) {
+  itemRepository.save(item);
+  return "basic/item"; 
+}
+```
+
+`@ModelAttribute`의 이름을 생략할 수 있다.
+
+**주의**
+`@ModelAttribute`의 이름을 생략하면 모델에 저장될 때 클래스명을 사용한다. 이때 클래스의 첫글자를 변경해서 
+등록한다. 
+- ex) `@ModelAttribute` 클래스명 -> 모델에 자동 추가되는 이름
+-> `Item` -> `item`
+-> `HelloWorld` -> `helloWorld`
+
+**addItemV4 - 상품 등록 처리 - ModelAttribute 전체 생략**
+
+```java
+/**
+ * @ModelAttribute 자체 생략 가능
+ * model.addAttribute(item) 자동 추가
+ */
+
+import org.springframework.web.bind.annotation.PostMapping;
+
+@PostMapping("/add")
+public String addItemV4(Item item) {
+  itemRepository.save(item);
+  return "basic/item";
+}
+```
+
+`@ModelAttribute` 자체도 생략가능하다. 대상 객체는 모델에 자동 등록된다.
+
+
+
+
+
+
+
