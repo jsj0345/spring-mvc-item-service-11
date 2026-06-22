@@ -881,8 +881,227 @@ public String addItemV4(Item item) {
 
 `@ModelAttribute` 자체도 생략가능하다. 대상 객체는 모델에 자동 등록된다.
 
+**상품 수정**
 
+```java
+import hello.itemservice.domain.item.Item;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
+@GetMapping("/{itemId}/edit")
+public String editForm(@PathVariable Long itemId, Model model) {
+  Item item = itemRepository.findById(itemId);
+  model.addAttribute("item", item);
+  return "basic/editForm"; 
+}
+```
+
+**상품 수정 폼 뷰**
+
+`/resources/templates/basic/editForm.html`
+
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <link href="../css/bootstrap.rtl.min.css"
+          th:href="@{/css/bootstrap.rtl.min.css}" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 560px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>상품 수정 폼</h2>
+        </div>
+        
+        <form action="item.html" th:action method="post">
+            <div>
+                <label for="id">상품 ID</label>
+                <input type="text" id="id" name="id" class="form-control"
+                       value="1"
+                       th:value="${item.id}"
+                       readonly>
+            </div>
+            
+            <div>
+                <label for="itemName">상품명</label>
+                <input type="text" id="itemName" name="itemName" class="form-control"
+                       value="상품A" th:value="${item.itemName}">
+            </div>
+            
+            <div>
+                <label for="price">가격</label>
+                <input type="text" id="price" name="price" class="form-control"
+                       th:value="${item.price}">
+            </div>
+            
+            <div>
+                <label for="quantity">수량</label>
+                <input type="text" id="quantity" name="quantity" class="form-control"
+                       th:value="${item.quantity}">
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="row">
+                <div class="col">
+                    <button class="w-100 btn btn-primary btn-lg" type="submit">저장</button>
+                </div>
+                
+                <div class="col">
+                    <button class="w-100 btn btn-secondary btn-lg"
+                            onclick="location.href='item.html'"
+                            th:onclick="|location.href='@{/basic/items/{itemId}(itemId=${item.id})}'|"
+                            type="button">취소</button>
+                            
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+```
+
+**상품 수정 개발**
+```java
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+
+@PostMapping("/{itemId}/edit")
+public String edit(@PathVariable Long itemId, @ModelAttribute Item item) {
+  itemRepository.update(itemId, item);
+  return "redirect:/basic/items/{itemId}"; 
+}
+```
+
+상품 수정은 상품 등록과 전체 프로세스가 유사하다.
+- GET `/items/{itemId}/edit` : 상품 수정 폼
+- POST `/items/{itemId}/edit` : 상품 수정 처리 
+
+**리다이렉트**
+상품 수정은 마지막에 뷰 템플릿을 호출하는 대신에 상품 상세 화면으로 이동하도록 리다이렉트를 호출한다.
+- 스프링은 `redircet:/...`으로 편리하게 리다이렉트를 지원한다.
+- `redirect:/basic/items/{itemId}`
+-> 컨트롤러에 매핑된 `@PathVariable`의 값은 `redirect`에도 사용 할 수 있다.
+-> `redirect:/basic/items/{itemId}` -> `{itemId}`는 `@PathVariable Long itemId`의 값을 그대로 사용한다.
+
+## 5. PRG (Post/Redirect/Get)
+사실 지금까지 진행한 상품 등록 처리 컨트롤러는 심각한 문제가 있다. (addItemV1 ~ addItemV4)
+addItemV1 ~ addItemV4 컨트롤러를 보기 전에 상품 등록 절차에 대해서 잠깐 생각해보자.
+
+```java
+@Controller
+@RequestMapping("/basic/items")
+@RequiredArgsConstructor 
+public class BasicItemController {
+
+  private final ItemRepository itemRepository;
+  
+  @GetMapping
+  public String items(Model model) {
+    List<Item> items = itemRepository.findAll();
+    model.addAttribute("items", items);
+    return "basic/items";
+  }
+
+  @GetMapping("/{itemId}")
+  public String item(@PathVariable("itemId") long itemId, Model model) {
+    Item item = itemRepository.findById(itemId);
+    model.addAttribute("item", item);
+    return "basic/item";
+  }
+
+  @GetMapping("/add")
+  public String addForm() {
+    return "basic/addForm";
+  }
+
+  //@PostMapping("/add")
+  public String addItemV1(@RequestParam String itemName,
+                     @RequestParam int price,
+                     @RequestParam Integer quantity,
+                     Model model
+  ) {
+
+    Item item = new Item();
+    item.setItemName(itemName);
+    item.setPrice(price);
+    item.setQuantity(quantity);
+
+    itemRepository.save(item);
+
+    model.addAttribute("item", item);
+
+    return "basic/item";
+  }
+
+  //@PostMapping("/add")
+  public String addItemV2(@ModelAttribute("item") Item item, Model model
+  ) {
+    itemRepository.save(item);
+    //model.addAttribute("item", item);
+    //@ModelAttribute는 item 객체를 만들어주고 동시에 addAttribute("item", item)도 해준다.
+    return "basic/item";
+  }
+
+  //@PostMapping("/add")
+  public String addItemV3(@ModelAttribute Item item, Model model
+  ) {
+    // V2처럼 이름을 따로 지정해주지 않는다면?
+    // 클래스명이 Item인데 맨앞 알파벳만 소문자로 바꾼다. Item -> item
+    // 즉, model.addAttribute("item", item); 이 되는것이다.
+    itemRepository.save(item);
+    return "basic/item";
+  }
+
+  //@PostMapping("/add")
+  public String addItemV4(Item item) {
+    // 이 경우는 @ModelAttribute가 생략되어 있는 것으로 판단. Item -> item
+    itemRepository.save(item);
+    return "basic/item";
+  }
+  
+}
+```
+
+먼저 `localhost:8080/basic/items`을 입력하여 이동을 한다. 
+이동하면 물품들의 리스트가 나오는데 상품 등록 버튼을 누른다면 Post 방식이 아닌 Get 방식으로 요청을 한다.
+그래서 상품 등록 양식이 나온다. 
+이후에, 등록을 하면 `addForm.html`에서 같은 링크로 이동한다. (form 태그 참고, 이땐 post 형식을 이용)
+이제 addItemV1 ~ addItemV4 중 등록한 메서드로 이동을 하는데 마지막에 하는 작업이 `src/main/resources/templates/basic/item.html`으로 이동한다.
+이 상황에서 새로 고침하면 마지막 작업은 코드에서 보는것처럼 `itemRepository.save(item)`을 한 이후에 html 파일 렌더링이 되는 것이므로
+계속 물품이 추가되는 상황이 발생한다. (새로 고침을 하면 post 방식의 `basic/items/add가 계속 링크로 고정되어 있기 때문)
+이 문제를 방지하고자 PRG 패턴을 사용해보자. 
+
+코드를 추가해보자.
+**BasicItemController에 추가**
+
+```java
+/**
+ * PRG - Post/Redirect/Get
+ */
+
+import org.springframework.web.bind.annotation.PostMapping;
+
+@PostMapping("/add")
+public String addItemV5(Item item) {
+  itemRepository.save(item);
+  return "redirect:/basic/items/" + item.getId(); 
+}
+```
+
+상품 등록 처리 이후에 뷰 템플릿이 아니라 상품 상세 화면으로 리다이렉트 하도록 코드를 작성해보자.
+이런 문제 해결 방식을 `PRG Post/Redirect/Get`라 한다.
+
+**주의**
+`"redirect:/basic/items/" + item.getId()` redirect에서 `+item.getId()`처럼 URL에 변수를 더해서
+사용하는 것은 URL 인코딩이 안되기 때문에 위험하다. `RedirectAttributes`를 사용하자. 
 
 
 
