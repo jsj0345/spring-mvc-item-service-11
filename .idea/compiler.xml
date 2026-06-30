@@ -12,5 +12,9 @@
         <module name="item-service.item-service.test" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="item-service.item-service.main~1" target="17" />
+      <module name="item-service.item-service.test~1" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>
