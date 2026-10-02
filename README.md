@@ -40,6 +40,7 @@ Spring MVC에서 상품 데이터를 등록하고 조회하고 수정하는 기�
 * `RedirectAttributes`를 사용해 등록된 상품 ID와 상태 값을 Redirect URL에 전달하는 흐름을 확인했습니다.
 * `@PostConstruct`를 사용해 애플리케이션 실행 시 테스트용 상품 데이터를 등록했습니다.
 * `ItemRepositoryTest`를 통해 상품 저장, 전체 조회, 수정 기능을 검증했습니다.
+* [개념 정리 파일 보기](./src/main/docs)
 
 ## 디렉터리 구조
 
