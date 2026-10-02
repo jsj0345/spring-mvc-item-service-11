@@ -24,7 +24,7 @@ Spring MVC에서 상품 데이터를 등록하고 조회하고 수정하는 기�
 * 상품 등록 후 `RedirectAttributes`를 사용한 Redirect 처리
 * 테스트용 초기 상품 데이터 등록
 * Repository 단위 테스트 작성
-* [개념 정리 파일 보기](./src/main/docs)
+* [개념 정리 문서 보기](./item-service/src/main/docs)
 
 ## 학습 포인트
 
